@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>聖公會李炳中學 - 校園特工大挑戰</title>
+    <style>
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e0f2fe; overflow: hidden; touch-action: manipulation; }
+        
+        #game-container { 
+            position: relative; width: 100vw; height: 100vh; max-width: 600px; margin: 0 auto; 
+            background: linear-gradient(-45deg, #e0f2fe, #bae6fd, #7dd3fc, #93c5fd);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1); 
+            overflow: hidden; 
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .bg-bubbles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; margin: 0; padding: 0; overflow: hidden; pointer-events: none; }
+        .bg-bubbles li { position: absolute; list-style: none; display: block; width: 40px; height: 40px; background-color: rgba(255, 255, 255, 0.4); bottom: -100px; animation: floatUp 20s infinite linear; border-radius: 50%; border: 1px solid rgba(255,255,255,0.6); }
+        .bg-bubbles li:nth-child(1) { left: 10%; width: 80px; height: 80px; animation-delay: 0s; }
+        .bg-bubbles li:nth-child(2) { left: 20%; width: 30px; height: 30px; animation-delay: 2s; animation-duration: 17s; }
+        .bg-bubbles li:nth-child(3) { left: 25%; width: 50px; height: 50px; animation-delay: 4s; }
+        .bg-bubbles li:nth-child(4) { left: 40%; width: 60px; height: 60px; animation-delay: 0s; animation-duration: 22s; }
+        .bg-bubbles li:nth-child(5) { left: 70%; width: 40px; height: 40px; animation-delay: 3s; }
+        .bg-bubbles li:nth-child(6) { left: 80%; width: 90px; height: 90px; animation-delay: 3s; background-color: rgba(255, 255, 255, 0.2); }
+        .bg-bubbles li:nth-child(7) { left: 32%; width: 30px; height: 30px; animation-delay: 7s; }
+        .bg-bubbles li:nth-child(8) { left: 55%; width: 45px; height: 45px; animation-delay: 15s; animation-duration: 30s; }
+        .bg-bubbles li:nth-child(9) { left: 20%; width: 15px; height: 15px; animation-delay: 2s; animation-duration: 35s; }
+        .bg-bubbles li:nth-child(10) { left: 90%; width: 70px; height: 70px; animation-delay: 11s; }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-1000px) scale(1.5); opacity: 0; }
+        }
+        
+        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; box-sizing: border-box; transition: opacity 0.3s; z-index: 1; }
+        .hidden { opacity: 0; pointer-events: none; z-index: -1; }
+        
+        h1 { color: #0f172a; font-size: 2.2rem; text-shadow: 2px 2px 0px #ffffff; margin-bottom: 10px; font-weight: 900; }
+        p.subtitle { color: #1e40af; font-size: 1.2rem; margin-bottom: 30px; font-weight: bold; background: rgba(255,255,255,0.8); padding: 5px 15px; border-radius: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        
+        button { background-color: #2563eb; color: white; border: none; padding: 15px 30px; font-size: 1.5rem; border-radius: 50px; cursor: pointer; box-shadow: 0 4px 10px rgba(37,99,235,0.3); transition: transform 0.1s, background-color 0.2s; font-weight: bold; }
+        button:active { transform: scale(0.95); }
+        button:hover { background-color: #1d4ed8; }
+        
+        #hud { position: absolute; top: 15px; left: 15px; right: 15px; display: flex; justify-content: space-between; align-items: center; font-size: 1.2rem; font-weight: 900; color: #0f172a; z-index: 10; }
+        .hud-box { background: rgba(255, 255, 255, 0.9); padding: 8px 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); border: 2px solid #bfdbfe; backdrop-filter: blur(5px); }
+        
+        #mute-btn { padding: 8px 15px; font-size: 1.2rem; border-radius: 12px; background-color: rgba(255, 255, 255, 0.9); color: #0f172a; border: 2px solid #cbd5e1; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer;}
+        
+        .item { 
+            position: absolute; 
+            font-size: 3rem; 
+            cursor: pointer; 
+            user-select: none; 
+            transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 5; 
+            width: 75px;
+            height: 75px;
+            background-color: rgba(255, 255, 255, 0.95);
+            border: 4px solid #3b82f6; 
+            border-radius: 50%; 
+            box-shadow: 0 6px 0 #2563eb, 0 10px 15px rgba(0,0,0,0.2); 
+        }
+        
+        .item.bad-item {
+            border-color: #ef4444; 
+            box-shadow: 0 6px 0 #dc2626, 0 10px 15px rgba(0,0,0,0.2);
+        }
+
+        .item.pressed {
+            transform: translateY(6px) scale(0.95); 
+            box-shadow: 0 0px 0 transparent, 0 2px 5px rgba(0,0,0,0.2) !important; 
+            background-color: #e2e8f0; 
+        }
+        
+        #quiz-warning { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 15; backdrop-filter: blur(8px); transition: opacity 0.2s; }
+        #quiz-warning h2 { font-size: 2.5rem; color: #ef4444; font-weight: 900; text-shadow: 2px 2px #fff; margin-bottom: 10px; }
+        #quiz-countdown { font-size: 6rem; color: #2563eb; font-weight: 900; text-shadow: 3px 3px 0px #fff; }
+        
+        #quiz-modal { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(255, 255, 255, 0.95); padding: 25px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.3); z-index: 20; width: 85%; border: 4px solid #3b82f6; backdrop-filter: blur(10px); }
+        .quiz-option { display: block; width: 100%; margin: 10px 0; padding: 15px; background: #f8fafc; color: #0f172a; border: 2px solid #cbd5e1; border-radius: 10px; font-size: 1.2rem; font-weight: bold; cursor: pointer; transition: all 0.2s; }
+        .quiz-option:hover { background: #dbeafe; border-color: #3b82f6; transform: translateY(-2px); }
+        
+        #leaderboard { margin-top: 20px; background: rgba(255,255,255,0.9); padding: 15px; border-radius: 15px; width: 90%; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .lb-entry { display: flex; justify-content: space-between; margin: 8px 0; font-size: 1.2rem; font-weight: bold; color: #1e3a8a; border-bottom: 2px dashed #e2e8f0; padding-bottom: 5px; }
+        
+        #name-input { padding: 12px; font-size: 1.2rem; margin: 15px 0; width: 80%; text-align: center; border-radius: 10px; border: 3px solid #3b82f6; font-weight: bold; outline: none; }
+        #name-input:focus { border-color: #1d4ed8; box-shadow: 0 0 8px rgba(59,130,246,0.5); }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <ul class="bg-bubbles">
+        <li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li><li></li>
+    </ul>
+
+    <div id="screen-start" class="screen">
+        <h1>聖公會李炳中學<br>校園特工大挑戰</h1>
+        <p class="subtitle">I seek, I act. 積極探索，努力實踐！</p>
+        <button onclick="startGame()">開始遊戲</button>
+    </div>
+
+    <div id="screen-game" class="screen hidden">
+        <div id="hud">
+            <div class="hud-box">分數: <span id="score">0</span></div>
+            <button id="mute-btn" onclick="toggleMute()">🔊</button>
+            <div class="hud-box">時間: <span id="time">60</span>s</div>
+        </div>
+        <div id="play-area" style="position: absolute; width: 100%; height: 100%; top:0; left:0;"></div>
+    </div>
+
+    <div id="quiz-warning" class="hidden">
+        <h2>準備快問快答！</h2>
+        <div id="quiz-countdown">3</div>
+    </div>
+
+    <div id="quiz-modal" class="hidden">
+        <h2 id="quiz-q" style="color:#0f172a; font-size:1.4rem; font-weight:900;"></h2>
+        <div id="quiz-options"></div>
+    </div>
+
+    <div id="screen-end" class="screen hidden">
+        <h1>挑戰結束！</h1>
+        <p class="subtitle">最終分數: <span id="final-score" style="color:#dc2626; font-size:1.5rem;">0</span></p>
+        
+        <input type="text" id="name-input" placeholder="輸入你的名字 (如: 小明)" maxlength="10">
+        <button onclick="saveScore()" style="font-size: 1.2rem; padding: 10px 20px; margin-bottom: 15px; background-color:#10b981; box-shadow: 0 4px 10px rgba(16,185,129,0.3);">儲存分數</button>
+        
+        <div id="leaderboard">
+            <h3 style="margin:0 0 10px 0; color:#0f172a;">🏆 高分排行榜</h3>
+            <div id="lb-list"></div>
+        </div>
+        
+        <br>
+        <button onclick="showStartScreen()">再玩一次</button>
+    </div>
+</div>
+
+<script>
+    let score = 0, time = 60, gameInterval, spawnInterval;
+    let isMuted = false;
+    let isPaused = false; 
+    let audioCtx = null; 
+    
+    const items = ['💧', '🤖', '📚', '🏫']; 
+    const badItem = '⏰'; 
+    const playArea = document.getElementById('play-area');
+    
+    // 原始總題庫
+    const allQuestions = [
+        { q: "聖公會李炳中學的校訓是什麼？", opts: ["取生命的水喝", "非以役人，乃役於人", "明德格物"], ans: 0 },
+        { q: "學校的核心口號 (Slogan) 是？", opts: ["I think, I do", "I seek, I act", "I play, I learn"], ans: 1 },
+        { q: "李炳中學著重推動哪項特色教育？", opts: ["廚藝訓練", "STEM / 創科教育", "賽車工程"], ans: 1 }
+    ];
+    
+    // 用來記錄這局還沒問過的題目
+    let availableQuestions = [];
+
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    }
+
+    function playBeep(freq, type, duration) {
+        if (isMuted || !audioCtx) return; 
+        if(audioCtx.state === 'suspended') audioCtx.resume();
+        
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type; 
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.05, audioCtx.currentTime); 
+        osc.connect(gain); 
+        gain.connect(audioCtx.destination);
+        osc.start(); 
+        gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration); 
+        osc.stop(audioCtx.currentTime + duration);
+    }
+
+    function toggleMute() {
+        isMuted = !isMuted;
+        document.getElementById('mute-btn').innerText = isMuted ? '🔇' : '🔊';
+        if (!isMuted && !audioCtx) initAudio();
+    }
+
+    function switchScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+        document.getElementById(id).classList.remove('hidden');
+    }
+
+    function showStartScreen() {
+        switchScreen('screen-start');
+        document.getElementById('name-input').value = '';
+        document.getElementById('name-input').style.display = 'block';
+    }
+
+    function startGame() {
+        initAudio();
+        
+        // 每次開始遊戲時，複製一份完整的題庫，確保重新開始時有題目可問
+        availableQuestions = [...allQuestions];
+        
+        score = 0; time = 60; isPaused = false;
+        updateHUD();
+        playArea.innerHTML = '';
+        switchScreen('screen-game');
+        
+        playBeep(440, 'sine', 0.01); 
+        
+        gameInterval = setInterval(() => {
+            if (isPaused) return; 
+            time--; updateHUD();
+            
+            if (time === 45 || time === 30) {
+                prepareQuiz(); 
+            } else if (time <= 0) {
+                endGame();
+            }
+        }, 1000);
+        
+        spawnInterval = setInterval(spawnItem, 600);
+    }
+
+    function updateHUD() {
+        document.getElementById('score').innerText = score;
+        document.getElementById('time').innerText = time;
+    }
+
+    function spawnItem() {
+        if (isPaused) return; 
+        
+        const item = document.createElement('div');
+        item.className = 'item';
+        const isBad = Math.random() < 0.2; 
+        
+        if (isBad) {
+            item.innerText = badItem;
+            item.classList.add('bad-item');
+        } else {
+            item.innerText = items[Math.floor(Math.random() * items.length)];
+        }
+        
+        item.style.left = Math.random() * 70 + 15 + '%';
+        item.style.top = Math.random() * 70 + 15 + '%';
+        
+        const timeout = setTimeout(() => item.remove(), 1200);
+        
+        item.ontouchstart = item.onmousedown = (e) => {
+            e.preventDefault();
+            if (isPaused || item.classList.contains('pressed')) return; 
+            
+            clearTimeout(timeout);
+            item.classList.add('pressed'); 
+            
+            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            
+            if (isBad) {
+                score = Math.max(0, score - 5);
+                playBeep(200, 'sawtooth', 0.2); 
+                showFloatingText(e.clientX, e.clientY, '-5', '#ef4444');
+            } else {
+                score += 10;
+                playBeep(600, 'sine', 0.1); 
+                showFloatingText(e.clientX, e.clientY, '+10', '#10b981');
+            }
+            updateHUD();
+            
+            setTimeout(() => item.remove(), 100);
+        };
+        playArea.appendChild(item);
+    }
+
+    function showFloatingText(x, y, text, color) {
+        const ft = document.createElement('div');
+        ft.innerText = text;
+        ft.style.position = 'fixed'; 
+        ft.style.left = x + 'px'; ft.style.top = y + 'px';
+        ft.style.color = color; ft.style.fontWeight = '900'; ft.style.fontSize = '2rem';
+        ft.style.textShadow = '2px 2px 0 #fff, -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff, 0 4px 8px rgba(0,0,0,0.3)';
+        ft.style.pointerEvents = 'none'; ft.style.transition = 'all 0.5s ease-out'; ft.style.zIndex = '50';
+        document.body.appendChild(ft);
+        
+        setTimeout(() => { ft.style.top = (y - 60) + 'px'; ft.style.opacity = '0'; }, 50);
+        setTimeout(() => ft.remove(), 550);
+    }
+
+    function prepareQuiz() {
+        isPaused = true; 
+        playArea.innerHTML = ''; 
+        
+        const warningDiv = document.getElementById('quiz-warning');
+        const countdownSpan = document.getElementById('quiz-countdown');
+        warningDiv.classList.remove('hidden');
+        
+        let count = 3;
+        countdownSpan.innerText = count;
+        playBeep(400, 'sine', 0.2);
+        
+        let countdownInterval = setInterval(() => {
+            count--;
+            if (count > 0) {
+                countdownSpan.innerText = count;
+                playBeep(400, 'sine', 0.2);
+            } else {
+                clearInterval(countdownInterval);
+                warningDiv.classList.add('hidden');
+                showQuiz(); 
+            }
+        }, 1000);
+    }
+
+    function showQuiz() {
+        // 防呆機制：如果題目抽完了，就重新洗牌
+        if (availableQuestions.length === 0) {
+            availableQuestions = [...allQuestions];
+        }
+
+        // 隨機抽取一題
+        const randomIndex = Math.floor(Math.random() * availableQuestions.length);
+        // splice 會將該題從陣列中剔除，同時回傳被剔除的項目，確保不會重複
+        const q = availableQuestions.splice(randomIndex, 1)[0]; 
+
+        document.getElementById('quiz-q').innerText = q.q;
+        const optsDiv = document.getElementById('quiz-options');
+        optsDiv.innerHTML = '';
+        
+        q.opts.forEach((opt, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'quiz-option';
+            btn.innerText = opt;
+            btn.onclick = () => answerQuiz(idx === q.ans);
+            optsDiv.appendChild(btn);
+        });
+        document.getElementById('quiz-modal').classList.remove('hidden');
+    }
+
+    function answerQuiz(isCorrect) {
+        document.getElementById('quiz-modal').classList.add('hidden');
+        if (isCorrect) {
+            score += 30; 
+            playBeep(800, 'sine', 0.2); setTimeout(() => playBeep(1000, 'sine', 0.3), 200);
+            showFloatingText(window.innerWidth/2, window.innerHeight/2, '+30 答對了!', '#10b981');
+        } else {
+            playBeep(150, 'sawtooth', 0.4);
+            showFloatingText(window.innerWidth/2, window.innerHeight/2, '答錯了!', '#ef4444');
+        }
+        updateHUD();
+        isPaused = false; 
+    }
+
+    function endGame() {
+        clearInterval(gameInterval); clearInterval(spawnInterval);
+        document.getElementById('final-score').innerText = score;
+        switchScreen('screen-end');
+        updateLeaderboardDisplay();
+        playBeep(400, 'sine', 0.2); setTimeout(() => playBeep(600, 'sine', 0.4), 250);
+    }
+
+    function saveScore() {
+        const nameInput = document.getElementById('name-input');
+        const name = nameInput.value.trim() || "匿名特工";
+        let lb = JSON.parse(localStorage.getItem('liping_lb') || '[]');
+        lb.push({ name: name, score: score });
+        lb.sort((a, b) => b.score - a.score);
+        lb = lb.slice(0, 5);
+        localStorage.setItem('liping_lb', JSON.stringify(lb));
+        nameInput.style.display = 'none';
+        updateLeaderboardDisplay();
+    }
+
+    function updateLeaderboardDisplay() {
+        const lb = JSON.parse(localStorage.getItem('liping_lb') || '[]');
+        const lbList = document.getElementById('lb-list');
+        lbList.innerHTML = lb.map((entry, i) => 
+            `<div class="lb-entry"><span>${i+1}. ${entry.name}</span><span>${entry.score} 分</span></div>`
+        ).join('');
+    }
+</script>
+</body>
+</html>
